@@ -39,7 +39,7 @@ export class SessionListComponent implements OnInit, OnDestroy {
   allSessions;
 
   showSortedSessions = false;
-  showForagingSessions = false;
+  selectedTaskType: string = 'audio delay';
   sessionDateFilter: Function;
   // miceBirthdayFilter: Function;
   sessionMinDate: Date;
@@ -95,7 +95,6 @@ export class SessionListComponent implements OnInit, OnDestroy {
       this.filterExpanded = true;
     }
     const tableState: [number, number, Object] = this.filterStoreService.retrieveSessionTableState();
-    // console.log('tableState: ', tableState);
     this.route.queryParams
       .subscribe(params => {
         // console.log('params loading sessions: ', params);
@@ -162,7 +161,6 @@ export class SessionListComponent implements OnInit, OnDestroy {
       });
     // TODO: create menu content using separate api designated for menu instead of getting all session info
     this.allSessionsService.getAllSessionMenu({'__order': 'subject_id'});
-    // this.allSessionsService.getAllSessionMenu({});
     this.allSessionMenuSubscription = this.allSessionsService.getAllSessionMenuLoadedListener()
       .subscribe((sessions_all: any) => {
         this.allSessions = sessions_all;
@@ -566,18 +564,20 @@ export class SessionListComponent implements OnInit, OnDestroy {
     this.applyToggleFilter();
   }
 
-  toggleSessionTaskViewStatus() {
-    this.showForagingSessions = !this.showForagingSessions;
-    this.applyToggleFilter();
-  }
-
   applyToggleFilter() {
     const sortedSessions = [];
       for (const session of this.sessions) {
-        let is_foraging = session['is_foraging'] == this.showForagingSessions;
+        let is_selected_task = true
+
+        if (this.selectedTaskType == 'all') {
+          is_selected_task = true
+        } else {
+          is_selected_task = session['task'].startsWith(this.selectedTaskType);
+        }
+
         let is_sorted_only = this.showSortedSessions ? (session['clustering_methods'] && session['clustering_methods'].length > 0) : true;
 
-        if (is_foraging && is_sorted_only) {
+        if (is_selected_task && is_sorted_only) {
           sortedSessions.push(session);
         }
       }

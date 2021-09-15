@@ -237,6 +237,7 @@ def handle_q(subpath, args, proj, **kwargs):
         q = probe_insertions
     elif subpath == 'units':
         check_is_session_restriction(args)
+        session_task = (experiment.BehaviorTrial & args).fetch('task', limit=1)[0]
 
         exclude_attrs = ['-spike_times', '-waveform', '-unit_uid',
                          '-spike_depths', '-spike_sites', '-probe']
@@ -265,8 +266,13 @@ def handle_q(subpath, args, proj, **kwargs):
 
         units = units.aggr(report.UnitLevelEphysReport, ..., unit_psth_s3fp='unit_psth',
                            keep_all_rows=True)
-        units = units.aggr(report.UnitLevelTrackingReport, ...,
-                           unit_behavior_s3fp='unit_behavior', keep_all_rows=True)
+
+        if session_task == 'multi-target-licking':
+            units = units.aggr(report.UnitMTLTrackingReport, ...,
+                               unit_behavior_s3fp='unit_mtl_tracking', keep_all_rows=True)
+        else:
+            units = units.aggr(report.UnitLevelTrackingReport, ...,
+                               unit_behavior_s3fp='unit_behavior', keep_all_rows=True)
 
         contain_s3fp = True
         q = units.fetch(as_dict=True)
@@ -456,8 +462,7 @@ def get_sessions_query():
       insert_locations='GROUP_CONCAT(brain_region SEPARATOR", ")', keep_all_rows=True)
 
     sessions = sessions.aggr(tracking.Tracking, ..., tracking_avai='count(trial) > 0', keep_all_rows=True)
-    sessions = sessions.aggr(experiment.BehaviorTrial & 'task LIKE "foraging%"', ..., is_foraging='count(trial) > 0', keep_all_rows=True)
-
+    sessions = sessions.aggr(experiment.BehaviorTrial, ..., task='task')
     unitsessions = experiment.Session.proj().aggr(ephys.Unit.proj(), ...,
                                                   clustering_methods='GROUP_CONCAT(DISTINCT clustering_method SEPARATOR", ")',
                                                   keep_all_rows=True)
