@@ -157,8 +157,15 @@
   <div class="container">
     <div class="row ">
       <div class="col-auto">
-          <mat-label ngClass="labelBeforeSlide">Delay-Response Task</mat-label>
-          <mat-slide-toggle [checked]="showForagingSessions" (change)="toggleSessionTaskViewStatus()">Foraging Task</mat-slide-toggle>
+        <mat-form-field appearance="fill">
+          <mat-label>Task Type</mat-label>
+          <mat-select [(value)]="selectedTaskType" name="selectedTaskType" (selectionChange)="applyToggleFilter()">
+          <mat-option value="audio delay">Delay Response</mat-option>
+          <mat-option value="foraging">Foraging</mat-option>
+          <mat-option value="multi-target-licking">Multi-target Licking</mat-option>
+          <mat-option value="all">All</mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
       <div class="col-auto">
         <mat-checkbox class="sorted_sessions_chbox" [checked]="showSortedSessions" (change)="toggleSortedSessionViewStatus()">

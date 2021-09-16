@@ -15,7 +15,7 @@ COPY ./frontend-content/src/assets/addons/map-color-theme.css /frontend/node_mod
 COPY ./frontend-content/src/assets/addons/plotly.js /frontend/node_modules/plotly.js-dist/
 
 HEALTHCHECK       \
-    --timeout=3s \ 
+    --timeout=3s \
     --retries=20  \
     CMD           \
         curl --fail http://localhost:9000 || exit 1
