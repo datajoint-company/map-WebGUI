@@ -195,13 +195,23 @@ def handle_q(subpath, args, proj, **kwargs):
         q = sessions & args & insert_locations_restr & clustering_methods_restr
     elif subpath == 'session':
         check_is_session_restriction(args)
+        session_task = (experiment.BehaviorTrial & args).fetch('task', limit=1)[0]
 
         sessions = get_sessions_query() & args
 
         # get plots from schema `report`
-        plotsessions = (experiment.Session & args).proj().aggr(report.SessionLevelReport, ...,
-                                                               behavior_performance_s3fp='behavior_performance',
-                                                               keep_all_rows=True)
+
+        if session_task in ('foraging', 'foraging 3lp'):
+            plotsessions = (experiment.Session & args).proj().aggr(
+                report.SessionLevelForagingSummary, ...,
+                behavior_performance_s3fp='session_foraging_summary',
+                keep_all_rows=True)
+        else:
+            plotsessions = (experiment.Session & args).proj().aggr(
+                report.SessionLevelReport, ...,
+                behavior_performance_s3fp='behavior_performance',
+                keep_all_rows=True)
+
         plotsessions = plotsessions.aggr(report.SessionLevelProbeTrack, ...,
                                          session_tracks_plot_s3fp='session_tracks_plot', keep_all_rows=True)
         plotsessions = plotsessions.aggr(report.SessionLevelCDReport, ..., coding_direction_s3fp='coding_direction',
@@ -244,6 +254,7 @@ def handle_q(subpath, args, proj, **kwargs):
         units = (ephys.Unit * ephys.UnitStat
                  * lab.ElectrodeConfig.Electrode
                  * lab.ProbeType.Electrode.proj('shank')
+                 & (ephys.UnitPassingCriteria & 'criteria_passed = 1')
                  & args).proj(..., unit_depth='unit_posy', is_all='unit_quality = "all"', *exclude_attrs)
 
         shank_depths = {}
@@ -270,6 +281,9 @@ def handle_q(subpath, args, proj, **kwargs):
         if session_task == 'multi-target-licking':
             units = units.aggr(report.UnitMTLTrackingReport, ...,
                                unit_behavior_s3fp='unit_mtl_tracking', keep_all_rows=True)
+        elif session_task in ('foraging', 'foraging 3lp'):
+            units = units.aggr(report.UnitLevelForagingEphysReport, ...,
+                               unit_behavior_s3fp='unit_foraging_tuning', keep_all_rows=True)
         else:
             units = units.aggr(report.UnitLevelTrackingReport, ...,
                                unit_behavior_s3fp='unit_behavior', keep_all_rows=True)
