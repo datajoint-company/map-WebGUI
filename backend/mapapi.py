@@ -263,28 +263,33 @@ def handle_q(subpath, args, proj, **kwargs):
               lab.ElectrodeConfig.Electrode * lab.ProbeType.Electrode,
               shanks='GROUP_CONCAT(DISTINCT shank SEPARATOR ", ")').fetch1('shanks')
             for shank_no in np.array(shanks.split(', ')).astype(int):
-                last_electrode_site = np.array(
-                  (histology.InterpolatedShankTrack.DeepestElectrodePoint
-                   & probe_insertion & {'shank': shank_no}).fetch1(
-                    'ccf_x', 'ccf_y', 'ccf_z'))
-                # CCF position of the brain surface where this shank crosses
-                brain_surface_site = np.array(
-                  (histology.InterpolatedShankTrack.BrainSurfacePoint
-                   & probe_insertion & {'shank': shank_no}).fetch1(
-                    'ccf_x', 'ccf_y', 'ccf_z'))
-
-                shank_depths[(probe_insertion['insertion_number'], shank_no)] = -np.linalg.norm(last_electrode_site - brain_surface_site)
-
-        units = units.aggr(report.UnitLevelEphysReport, ..., unit_psth_s3fp='unit_psth',
-                           keep_all_rows=True)
+                if histology.InterpolatedShankTrack & probe_insertion:
+                    last_electrode_site = np.array(
+                      (histology.InterpolatedShankTrack.DeepestElectrodePoint
+                       & probe_insertion & {'shank': shank_no}).fetch1(
+                        'ccf_x', 'ccf_y', 'ccf_z'))
+                    # CCF position of the brain surface where this shank crosses
+                    brain_surface_site = np.array(
+                      (histology.InterpolatedShankTrack.BrainSurfacePoint
+                       & probe_insertion & {'shank': shank_no}).fetch1(
+                        'ccf_x', 'ccf_y', 'ccf_z'))
+                    shank_depths[(probe_insertion['insertion_number'], shank_no)] = -np.linalg.norm(last_electrode_site - brain_surface_site)
+                else:
+                  shank_depths[(probe_insertion['insertion_number'], shank_no)] = float(
+                    (ephys.ProbeInsertion.InsertionLocation & probe_insertion).fetch1('depth'))
 
         if session_task == 'multi-target-licking':
+            units = units.aggr(report.UnitLevelEphysReport, ..., unit_psth_s3fp='unit_psth',
+                               keep_all_rows=True)
             units = units.aggr(report.UnitMTLTrackingReport, ...,
                                unit_behavior_s3fp='unit_mtl_tracking', keep_all_rows=True)
         elif session_task in ('foraging', 'foraging 3lp'):
             units = units.aggr(report.UnitLevelForagingEphysReport, ...,
+                               unit_psth_s3fp='unit_foraging_tuning',
                                unit_behavior_s3fp='unit_foraging_tuning', keep_all_rows=True)
         else:
+            units = units.aggr(report.UnitLevelEphysReport, ..., unit_psth_s3fp='unit_psth',
+                               keep_all_rows=True)
             units = units.aggr(report.UnitLevelTrackingReport, ...,
                                unit_behavior_s3fp='unit_behavior', keep_all_rows=True)
 
@@ -330,16 +335,19 @@ def handle_q(subpath, args, proj, **kwargs):
                 pos_x, pos_y, color_code, annotation = annotated_electrodes.fetch(
                   'x_coord', 'y_coord', 'color_code', 'annotation', order_by='y_coord DESC')
 
-                last_electrode_site = np.array(
-                  (histology.InterpolatedShankTrack.DeepestElectrodePoint
-                   & probe_insertion & {'shank': shank_no}).fetch1(
-                    'ccf_x', 'ccf_y', 'ccf_z'))
-                brain_surface_site = np.array(
-                  (histology.InterpolatedShankTrack.BrainSurfacePoint
-                   & probe_insertion & {'shank': shank_no}).fetch1(
-                    'ccf_x', 'ccf_y', 'ccf_z'))
+                if histology.InterpolatedShankTrack & probe_insertion:
+                    last_electrode_site = np.array(
+                      (histology.InterpolatedShankTrack.DeepestElectrodePoint
+                       & probe_insertion & {'shank': shank_no}).fetch1(
+                        'ccf_x', 'ccf_y', 'ccf_z'))
+                    brain_surface_site = np.array(
+                      (histology.InterpolatedShankTrack.BrainSurfacePoint
+                       & probe_insertion & {'shank': shank_no}).fetch1(
+                        'ccf_x', 'ccf_y', 'ccf_z'))
 
-                y_ref = -np.linalg.norm(last_electrode_site - brain_surface_site)
+                    y_ref = -np.linalg.norm(last_electrode_site - brain_surface_site)
+                else:
+                    y_ref = float((ephys.ProbeInsertion.InsertionLocation & probe_insertion).fetch1('depth'))
 
                 region2color_map = {**{r: c for r, c in zip(annotation, color_code)}, '': 'FFFFFF'}
 
