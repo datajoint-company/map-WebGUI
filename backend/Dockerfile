@@ -1,5 +1,7 @@
 FROM datajoint/jupyter:python3.6
 
+RUN pip install --upgrade pip
+
 # for production builds
 ADD . /src/mapapi
 
