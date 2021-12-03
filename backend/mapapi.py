@@ -285,7 +285,7 @@ def handle_q(subpath, args, proj, **kwargs):
                                unit_behavior_s3fp='unit_mtl_tracking', keep_all_rows=True)
         elif session_task in ('foraging', 'foraging 3lp'):
             units = units.aggr(report.UnitLevelForagingEphysReport, ...,
-                               unit_psth_s3fp='unit_foraging_tuning',
+                               unit_psth_s3fp='unit_foraging_psth',
                                unit_behavior_s3fp='unit_foraging_tuning', keep_all_rows=True)
         else:
             units = units.aggr(report.UnitLevelEphysReport, ..., unit_psth_s3fp='unit_psth',
