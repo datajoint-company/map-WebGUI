@@ -254,7 +254,7 @@ def handle_q(subpath, args, proj, **kwargs):
         units = (ephys.Unit * ephys.UnitStat
                  * lab.ElectrodeConfig.Electrode
                  * lab.ProbeType.Electrode.proj('shank')
-                 & (ephys.UnitPassingCriteria & 'criteria_passed = 1')
+                #  & (ephys.UnitPassingCriteria & 'criteria_passed = 1')
                  & args).proj(..., unit_depth='unit_posy', is_all='unit_quality = "all"', *exclude_attrs)
 
         shank_depths = {}
